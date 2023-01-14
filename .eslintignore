@@ -1,0 +1,6 @@
+.eslintrc.js
+/node_moduels
+/public
+/build
+/dist
+vite.config.ts
