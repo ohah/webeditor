@@ -27,16 +27,17 @@ export interface IData {
 }
 enum Tag {
   PARAGRAPH = 'paragraph',
-  SPAN = 'span',
+  p = 'p',
   H1 = 'h1',
   H2 = 'h2',
   H3 = 'h3',
   H4 = 'h4',
   H5 = 'h5',
   H6 = 'h6',
-  LINEBREAK = 'br',
 }
 enum FormatTag {
+  LINEBREAK = 'br',
+  SPAN = 'span',
   BOLD = 'strong',
   UNDERLINE = 'u',
   ITALIC = 'em',
@@ -64,13 +65,38 @@ const InnerFormatType = {
 //   linebreak = 'br',
 // }
 
-export const Frag = (data: string) => {
-  const frag = document.createDocumentFragment();
-  const div = document.createElement('div');
-  frag.appendChild(div);
-  div.innerHTML = data;
-  div.normalize();
-  const walker = document.createTreeWalker(div, NodeFilter.SHOW_TEXT, {
+export const HtmlMerge = (element: Node) => {
+  let child = element.firstChild;
+  while (child) {
+    var that = child.previousSibling;
+    if (that && that.nodeType === Node.ELEMENT_NODE && that.nodeName === child.nodeName) {
+      var node = document.createElement(child.nodeName);
+      while (that.firstChild) {
+        node.appendChild(that.firstChild);
+      }
+      while (child.firstChild) {
+        node.appendChild(child.firstChild);
+      }
+      element.insertBefore(node, child.nextSibling);
+      element.removeChild(that);
+      element.removeChild(child);
+    }
+
+    child = child.nextSibling;
+  }
+  return element;
+};
+
+/**
+ * 무작위한 text/html 데이터를 원하는 html 태그 형태로 바꾼다.
+ * @param data {string}
+ * @returns HTML
+ */
+export const HtmlFilter = (element: Element) => {
+  // const result = document.createElement('div');
+  element.normalize();
+  // div.innerHTML = data;
+  const textWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (['span'].includes(node.parentNode?.nodeName.toLowerCase() || '') === false && node.nodeName === '#text') {
         return NodeFilter.FILTER_ACCEPT;
@@ -78,19 +104,56 @@ export const Frag = (data: string) => {
       return NodeFilter.FILTER_SKIP;
     },
   });
-  // const temp = [];
-  while (walker.nextNode()) {
-    const pEl = document.createElement('span');
-    (walker.currentNode as Element).replaceWith(pEl);
-    pEl.append(walker.currentNode);
+  // 단순한 텍스트 노드의 경우 span으로 감싸준다.
+  while (textWalker.nextNode()) {
+    const spanEl = document.createElement('span');
+    (textWalker.currentNode as Element).replaceWith(spanEl);
+    spanEl.append(textWalker.currentNode);
   }
-  // temp.map(node => {
-  //   return wrap('paragraph', wrap('span', node.textContent || ''));
-  // });
-  // console.log(temp);
-
-  console.log('div', div.innerHTML);
-  return toJSON(div);
+  const result = HtmlMerge(element);
+  result.normalize();
+  console.log(element);
+  const pWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null);
+  // 부모노드
+  // const pEl = document.createElement('p');
+  // while (pWalker.nextNode()) {
+  //   // 자식노드가 있을 때(지금은 span만 했지만 em, span, i, a 등 들어갈 예정)
+  //   if (pWalker.currentNode.nodeName.toLowerCase() === 'span') {
+  //     pEl.append(pWalker.currentNode.cloneNode(true));
+  //   } else {
+  //     if (pEl.children.length > 0) {
+  //       const appendNode = pEl.cloneNode(true);
+  //       const childAppendNode = document.createElement('p');
+  //       const { children } = appendNode as Element;
+  //       // console.log('children', children);
+  //       for (let i = 0; i < children.length; i++) {
+  //         const ele = children[i].cloneNode(true);
+  //         while (children[i].nextElementSibling?.nodeName === children[i].nodeName) {
+  //           ele.textContent += children[i].nextElementSibling?.textContent || '';
+  //           i++;
+  //         }
+  //         childAppendNode.appendChild(ele);
+  //       }
+  //       result.appendChild(childAppendNode);
+  //       // 자식노드 전부 삭제
+  //       while (pEl.hasChildNodes()) {
+  //         if (pEl.firstChild) {
+  //           pEl.removeChild(pEl.firstChild);
+  //         }
+  //       }
+  //     }
+  //     result.appendChild(pWalker.currentNode.cloneNode(true));
+  //   }
+  // }
+  // if (pEl.children.length > 0) {
+  //   result.appendChild(pEl.cloneNode(true));
+  //   pEl.remove();
+  // }
+  return result;
+  // const parse = new ParseController();
+  // return parse.toJSON(result.innerHTML);
+  // console.log('result', result.innerHTML);
+  // return toJSON(result);
 };
 
 // consvert json to dom
@@ -317,7 +380,7 @@ export class ParseController {
   toJSON(data: string): JSONFormat[] {
     const parent = document.createElement('div');
     parent.innerHTML = data;
-    const convert = convertHtml(parent);
+    const convert = HtmlFilter(parent);
     console.log('convert', convert.innerHTML);
     const result: JSONFormat[] = [];
     const parentTag = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul'];
@@ -344,7 +407,7 @@ export class ParseController {
               break;
             case 'span':
             default:
-              console.log('test', childWalker.currentNode);
+              // console.log('test', childWalker.currentNode);
               //서식 노드 넣어줘야함.
               attr.push({ text: childWalker.currentNode.textContent || '' });
               break;

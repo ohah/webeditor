@@ -1,5 +1,5 @@
 import './style.css';
-import { ParseController, convertHtml, IData, toJSON, Frag } from 'controller/ParseController';
+import { ParseController, convertHtml, IData, toJSON } from 'controller/ParseController';
 import { Editor } from 'editor';
 import { CursorElement, EditorElement } from 'webcomponents';
 customElements.define('editor-cursor', CursorElement);
@@ -59,13 +59,13 @@ const parse = new ParseController();
 // '<p><span> 테<strong>스트</strong> </span></p>'
 // '<p><span> 테<strong>스트</strong> </span><strong>스트</strong></p>'
 // console.log('result', parse.toJSON('일반텍스트<span> 테스트 </span> <p> 테스트 </p> <p>노자식<span>자식</span></p>'));
-console.log('result', Frag('최상위텍스트<span> 스팬 </span> <p> 노스팬P </p> <p>노스팬P2<span>정상SPAN</span></p>'));
-// '<p><span>일반텍스트</span></p><p><span>테스트</span></p><p><span>테스트</span><p><span>노자식자식</span></p>'
-// console.log('result', Frag('일반텍스트<span> 테스트 </span> <p> 테스트 </p> <p>노자식<span>자식</span></p>'));
-
-// const result = document.createElement('div');
-// result.innerHTML = parse.toHTML(data);
-// document.body.appendChild(result);
+console.log(
+  'result',
+  parse.toJSON(
+    '최상위텍스트<span> 스팬 </span><p> 노스팬P </p><p>노스팬P2<span>정상SPAN</span></p><span>마지막스팬</span>',
+  ),
+  parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span>자식</span></p>'),
+);
 document.addEventListener('paste', event => {
   const paste = event.clipboardData?.getData('text/html');
   console.log('paste', paste);

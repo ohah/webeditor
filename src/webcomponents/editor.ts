@@ -29,7 +29,7 @@ class EditorElement extends HTMLElement implements WebComponent {
     // this.content.innerHTML = this.innerHTML;
     this.shadowRoot.appendChild(this.content);
     this.shadowRoot.appendChild(this.textarea);
-    console.log(this.innerHTML.replace(/\n\s+/g, ''));
+    // console.log(this.innerHTML.replace(/\n\s+/g, ''));
     this.content.contentDocument!.body.innerHTML = this.innerHTML;
     this.content.contentDocument!.body.style.margin = '0';
     // const style = document.createElement('style');
