@@ -68,9 +68,9 @@ const InnerFormatType = {
 export const HtmlMerge = (element: Node) => {
   let child = element.firstChild;
   while (child) {
-    var that = child.previousSibling;
+    const that = child.previousSibling;
     if (that && that.nodeType === Node.ELEMENT_NODE && that.nodeName === child.nodeName) {
-      var node = document.createElement(child.nodeName);
+      const node = document.createElement(child.nodeName);
       while (that.firstChild) {
         node.appendChild(that.firstChild);
       }
@@ -110,50 +110,24 @@ export const HtmlFilter = (element: Element) => {
     (textWalker.currentNode as Element).replaceWith(spanEl);
     spanEl.append(textWalker.currentNode);
   }
+  //형제 span을 합친다.
   const result = HtmlMerge(element);
   result.normalize();
-  console.log(element);
-  const pWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null);
-  // 부모노드
-  // const pEl = document.createElement('p');
-  // while (pWalker.nextNode()) {
-  //   // 자식노드가 있을 때(지금은 span만 했지만 em, span, i, a 등 들어갈 예정)
-  //   if (pWalker.currentNode.nodeName.toLowerCase() === 'span') {
-  //     pEl.append(pWalker.currentNode.cloneNode(true));
-  //   } else {
-  //     if (pEl.children.length > 0) {
-  //       const appendNode = pEl.cloneNode(true);
-  //       const childAppendNode = document.createElement('p');
-  //       const { children } = appendNode as Element;
-  //       // console.log('children', children);
-  //       for (let i = 0; i < children.length; i++) {
-  //         const ele = children[i].cloneNode(true);
-  //         while (children[i].nextElementSibling?.nodeName === children[i].nodeName) {
-  //           ele.textContent += children[i].nextElementSibling?.textContent || '';
-  //           i++;
-  //         }
-  //         childAppendNode.appendChild(ele);
-  //       }
-  //       result.appendChild(childAppendNode);
-  //       // 자식노드 전부 삭제
-  //       while (pEl.hasChildNodes()) {
-  //         if (pEl.firstChild) {
-  //           pEl.removeChild(pEl.firstChild);
-  //         }
-  //       }
-  //     }
-  //     result.appendChild(pWalker.currentNode.cloneNode(true));
-  //   }
-  // }
-  // if (pEl.children.length > 0) {
-  //   result.appendChild(pEl.cloneNode(true));
-  //   pEl.remove();
-  // }
+  //부모가 없는 span을 구한다.
+  const spans = (<Element>result).querySelectorAll('span:not(p span)');
+  spans.forEach(span => {
+    if (span.parentNode?.nodeName !== 'p' || span.parentNode?.nodeName.toLowerCase() !== 'p') {
+      let p = document.createElement('p');
+      span.parentNode?.insertBefore(p, span);
+      p.appendChild(span);
+    }
+  });
+  const parentTags = (<Element>result).querySelectorAll('p, h1, h2, h3, h4, h5');
+  parentTags.forEach(parent => {
+    HtmlMerge(parent);
+  });
+
   return result;
-  // const parse = new ParseController();
-  // return parse.toJSON(result.innerHTML);
-  // console.log('result', result.innerHTML);
-  // return toJSON(result);
 };
 
 // consvert json to dom
