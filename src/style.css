@@ -10,7 +10,7 @@
   overflow: hidden;
   background-color: transparent;
 }
-iframe p{
+iframe *{
   margin:0;
   padding:0;
 }

@@ -1,5 +1,5 @@
 import './style.css';
-import { ParseController, convertHtml, IData, toJSON } from 'controller/ParseController';
+import { ParseController } from 'controller/ParseController';
 import { Editor } from 'editor';
 import { CursorElement, EditorElement } from 'webcomponents';
 customElements.define('editor-cursor', CursorElement);
@@ -61,10 +61,13 @@ const parse = new ParseController();
 // console.log('result', parse.toJSON('일반텍스트<span> 테스트 </span> <p> 테스트 </p> <p>노자식<span>자식</span></p>'));
 console.log(
   'result',
+  parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span> 자식</span></p>'),
+  // parse.toJSON(
+  //   '최상위텍스트<span> 스팬 </span><p> 노스팬P </p><p>노스팬P2<span>정상SPAN</span></p><span>마지막스팬</span>',
+  // ),
   parse.toJSON(
-    '최상위텍스트<span> 스팬 </span><p> 노스팬P </p><p>노스팬P2<span>정상SPAN</span></p><span>마지막스팬</span>',
+    '<span>텍스트</span><strong>굵게</strong><em>기울임</em><p><strong>스트롱</strong><span>일반</span></p><strong>마지막</strong>',
   ),
-  parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span>자식</span></p>'),
 );
 document.addEventListener('paste', event => {
   const paste = event.clipboardData?.getData('text/html');

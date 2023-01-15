@@ -65,7 +65,7 @@ const InnerFormatType = {
 //   linebreak = 'br',
 // }
 
-export const HtmlMerge = (element: Node) => {
+export const HtmlMerge = (element: Node): Element => {
   let child = element.firstChild;
   while (child) {
     const that = child.previousSibling;
@@ -84,7 +84,7 @@ export const HtmlMerge = (element: Node) => {
 
     child = child.nextSibling;
   }
-  return element;
+  return <Element>element;
 };
 
 /**
@@ -93,12 +93,13 @@ export const HtmlMerge = (element: Node) => {
  * @returns HTML
  */
 export const HtmlFilter = (element: Element) => {
-  // const result = document.createElement('div');
   element.normalize();
-  // div.innerHTML = data;
   const textWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      if (['span'].includes(node.parentNode?.nodeName.toLowerCase() || '') === false && node.nodeName === '#text') {
+      if (
+        ['span', 'strong', 'em', 'i', 'ul'].includes(node.parentNode?.nodeName.toLowerCase() || '') === false &&
+        node.nodeName === '#text'
+      ) {
         return NodeFilter.FILTER_ACCEPT;
       }
       return NodeFilter.FILTER_SKIP;
@@ -110,154 +111,116 @@ export const HtmlFilter = (element: Element) => {
     (textWalker.currentNode as Element).replaceWith(spanEl);
     spanEl.append(textWalker.currentNode);
   }
+
   //형제 span을 합친다.
-  const result = HtmlMerge(element);
-  result.normalize();
+  element = HtmlMerge(element);
+  element.normalize();
   //부모가 없는 span을 구한다.
-  const spans = (<Element>result).querySelectorAll('span:not(p span)');
-  spans.forEach(span => {
-    if (span.parentNode?.nodeName !== 'p' || span.parentNode?.nodeName.toLowerCase() !== 'p') {
-      let p = document.createElement('p');
-      span.parentNode?.insertBefore(p, span);
-      p.appendChild(span);
+  const formats = element.querySelectorAll(':not(p)');
+  const children = Array.from(element.childNodes);
+  const res: ChildNode[][] = [];
+  let cnt = 0;
+  children.forEach(child => {
+    if (child.nodeName !== 'P') {
+      // console.log('child', child.nodeName);
+      if (!res[cnt]) res[cnt] = [child];
+      else res[cnt].push(child);
+    } else {
+      res[++cnt] = [child];
+      cnt++;
+      // console.log('child', child.nodeName);
     }
   });
-  const parentTags = (<Element>result).querySelectorAll('p, h1, h2, h3, h4, h5');
-  parentTags.forEach(parent => {
-    HtmlMerge(parent);
-  });
+  console.log('res', res);
+  // console.log(children);
+  const regx = /(.+?)(<p>)/g;
+  const test = element.innerHTML.match(regx);
+  console.log('test', test);
+  // const fragment = document.createDocumentFragment();
+  // let currentP = document.createElement('p');
+  // fragment.appendChild(currentP);
+  // let 연속 = false;
+  // children.forEach(child => {
+  //   if (
+  //     ['span', 'strong', 'em', 'i', 'ul'].includes(child.nodeName.toLowerCase() || '') === false &&
+  //     ['span', 'strong', 'em', 'i', 'ul', 'div'].includes(child.parentElement?.nodeName.toLowerCase() || '')
+  //   ) {
+  //     // currentP = child;
+  //     연속 = true;
+  //     fragment.appendChild(child);
+  //   } else {
+  //     연속 = false;
+  //     // currentP.appendChild(child);
+  //     // currentP = document.createElement('p');
+  //     // fragment.cloneNode()
+  //     // while (fragment.firstChild) {
+  //     //   fragment.removeChild(fragment.firstChild);
+  //     // }
+  //   }
+  // });
+  // element.appendChild(fragment);
+  console.log('element', element);
+  // let child = element.firstChild;
+  // while (child) {
+  //   const that = child.previousSibling;
+  //   if (
+  //     // that &&
+  //     // that.nodeType === Node.ELEMENT_NODE &&
+  //     child.nodeType === Node.ELEMENT_NODE &&
+  //     ['p'].includes(child.parentElement?.nodeName.toLowerCase() || '') === false
+  //     // Array.from(formats.values()).includes(<Element>that) === Array.from(formats.values()).includes(<Element>child)
+  //   ) {
+  //     const node = document.createElement('p');
+  //     // while (that.firstChild) {
+  //     // node.appendChild(that);
+  //     // }
+  //     // while (child.firstChild) {
+  //     node.appendChild(child);
+  //     element.append(node);
+  //     // element.insertBefore(node, child.nextSibling);
+  //     // element.be
+  //     // }
+  //     // element.removeChild(that);
+  //     // element.removeChild(child);
+  //   }
 
-  return result;
-};
+  //   child = child.nextSibling;
+  // }
 
-// consvert json to dom
-export const toDOM = (obj: any) => {
-  if (typeof obj === 'string') {
-    obj = JSON.parse(obj);
-  }
-  let node,
-    { nodeType } = obj;
-  switch (nodeType) {
-    case 1: //ELEMENT_NODE
-      node = document.createElement(obj.tagName);
-      const attributes = obj.attributes || [];
-      for (let i = 0, len = attributes.length; i < len; i++) {
-        const attr = attributes[i];
-        node.setAttribute(attr[0], attr[1]);
-      }
-      break;
-    case 3: //TEXT_NODE
-      // eslint-disable-next-line no-undef
-      node = document.createTextNode(obj.nodeValue);
-      break;
-    case 8: //COMMENT_NODE
-      node = document.createComment(obj.nodeValue);
-      break;
-    case 9: //DOCUMENT_NODE
-      node = document.implementation.createDocument(null, null, null);
-      break;
-    case 10: //DOCUMENT_TYPE_NODE
-      node = document.implementation.createDocumentType(obj.nodeName, '', '');
-      break;
-    case 11: //DOCUMENT_FRAGMENT_NODE
-      node = document.createDocumentFragment();
-      break;
-    default:
-      return node;
-  }
-  if (nodeType === 1 || nodeType === 11) {
-    const childNodes = obj.childNodes || [];
-    for (let i = 0, len = childNodes.length; i < len; i++) {
-      node.appendChild(toDOM(childNodes[i]));
-    }
-  }
-  return node;
-};
+  // while (walker.nextNode()) {
+  //   if (Array.from(formats.values()).includes(<Element>walker.currentNode)) {
+  //     p.appendChild(formats.item(formatCursor++).cloneNode(true));
+  //     // console.log('sib', walker.currentNode.nextSibling, p);
+  //     if (Array.from(formats.values()).includes(<Element>walker.currentNode.nextSibling) === false) {
+  //       console.log('p', p);
+  //       p = document.createElement('p');
+  //       // walker.currentNode.insertBefore(p, walker.currentNode);
+  //     }
+  //   }
+  //   // result.appendChild(walker.currentNode.cloneNode(true));
+  //   console.log('wal', walker.currentNode);
+  // }
+  // console.log('formatCursor', formatCursor);
+  // const spans = (<Element>result).querySelectorAll('span:not(p span)');
+  console.log('html', element, formats);
 
-// convert to json
-export const toJSON = (node: Node, deps = 0) => {
-  node = node || this;
-  const obj: any = {
-    nodeType: node.nodeType,
-    deps,
-  };
-  if ((node as any).tagName) {
-    obj.nodeName = (node as Element).tagName.toLowerCase();
-  } else if (node.nodeName) {
-    obj.nodeName = node.nodeName;
-  }
-  if (node.nodeValue) {
-    obj.nodeValue = node.nodeValue;
-  }
-  const attrs = (node as any).attributes;
+  // spans.forEach(span => {
+  //   if (span.parentNode?.nodeName !== 'p' || span.parentNode?.nodeName.toLowerCase() !== 'p') {
+  //     let p = document.createElement('p');
+  //     console.log(span);
+  //     span.parentNode?.insertBefore(p, span);
+  //     p.appendChild(span);
+  //   }
+  // });
+  // console.log('result', result);
+  // const parentTags = (<Element>result).querySelectorAll('p, h1, h2, h3, h4, h5');
+  // parentTags.forEach(parent => {
+  //   HtmlMerge(parent);
+  // });
 
-  const { childNodes } = node;
-  let length;
-  let arr;
-  if (attrs) {
-    length = attrs.length;
-    arr = obj.attributes = new Array(length);
-    for (let i = 0; i < length; i++) {
-      const attr = attrs[i];
-      arr[i] = [attr.nodeName, attr.nodeValue];
-    }
-  }
-  if (childNodes) {
-    length = childNodes.length;
-    arr = obj.childNodes = new Array(length);
-    deps++;
-    for (let i = 0; i < length; i++) {
-      arr[i] = toJSON(childNodes[i], deps);
-    }
-  }
-  return obj;
-};
-
-/**
- * @description tag를 에디터에서 해석 가능한 html 태그로 변경한다.
- * @param element
- * @returns {Element}
- */
-export const wrapElement = (element: Element) => {
-  const passTag = ['span', 'i', 'b', 'a', 'div', 'strong'];
-  const parentPassTag = ['p', 'ul', 'li', 'code', 'quote'];
-  const collection = element.childNodes;
-  if (element.nodeName === '#text') {
-    element.replaceWith(wrap('span', element.textContent || ''));
-    return element;
-  }
-  // format 파싱 제대로 못함.
-  if (collection.length > 0) {
-    for (let i = 0; i < collection.length; i++) {
-      const tagName = collection[i].nodeName.toLowerCase();
-      if (passTag.includes(tagName)) {
-        if (
-          collection[i].parentElement === element &&
-          !parentPassTag.includes(collection[i].parentElement!.nodeName.toLowerCase())
-        ) {
-          //단순한 텍스트 노드가 아닐때(서식이 있을때)
-          if (collection[i].childNodes.length > 0) {
-            for (let k = 0; k < collection[i].childNodes.length; k++) {
-              //   if (collection[i].childNodes[k].nodeName !== '#text') {
-              //     console.log('#text', collection[i].childNodes[k].textContent);
-              //     element.appendChild(collection[i].childNodes[k]);
-              //   }
-              element.appendChild(collection[i].childNodes[k]);
-            }
-          } else {
-            collection[i] = wrap('paragraph', wrap(tagName as never, collection[i].textContent || ''));
-          }
-        }
-        if (tagName === 'div') {
-          collection[i] = wrap('paragraph', wrap('span', collection[i].textContent || ''));
-        }
-      } else {
-        wrapElement(collection[i] as Element);
-      }
-    }
-  }
   return element;
 };
+
 /**
  * @param {useTagType} tagName
  * @param {HTMLElement | string} wrap
@@ -277,45 +240,6 @@ export const wrap = (tagName: useTagType, wrap: HTMLElement[] | HTMLElement | st
   }
 
   return wrapper;
-};
-
-export const convertHtml = (element: Element) => {
-  const result = document.createElement('div');
-  const p = document.createElement('p');
-  const parentTag = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'li'];
-  element.innerHTML = element.innerHTML.replace(/>\s+</g, '');
-  const convert = wrapElement(element);
-  const walker = document.createTreeWalker(convert, NodeFilter.SHOW_ELEMENT, {
-    acceptNode(node) {
-      if (parentTag.includes(node.parentNode?.nodeName.toLowerCase() || '')) {
-        return NodeFilter.FILTER_SKIP;
-      }
-      if (element === node.parentElement) {
-        return NodeFilter.FILTER_ACCEPT;
-      }
-      return NodeFilter.FILTER_SKIP;
-    },
-  });
-  while (walker.nextNode()) {
-    console.log('walker', walker.currentNode);
-    if (parentTag.includes(walker.currentNode.nodeName.toLowerCase() || '')) {
-      // 만약 부모태그가 없는 경우 p태그를 부모로 해줌.
-      if (p.childElementCount > 0) {
-        result.appendChild(p.cloneNode(true));
-        p.innerHTML = '';
-      }
-      result.appendChild(walker.currentNode.cloneNode(true));
-    } else {
-      // 부모태그가 없는 경우 p 태그에 더해준다.
-      p.appendChild(walker.currentNode.cloneNode(true));
-    }
-  }
-  // 만약 부모태그가 없는 경우 p태그를 부모로 해줌.
-  if (p.childElementCount > 0) {
-    result.appendChild(p.cloneNode(true));
-    p.innerHTML = '';
-  }
-  return result;
 };
 
 const JSONParser = (data: JSONFormat) => {
@@ -355,7 +279,7 @@ export class ParseController {
     const parent = document.createElement('div');
     parent.innerHTML = data;
     const convert = HtmlFilter(parent);
-    console.log('convert', convert.innerHTML);
+    // console.log('convert', convert.innerHTML);
     const result: JSONFormat[] = [];
     const parentTag = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul'];
     const walker = document.createTreeWalker(convert, NodeFilter.SHOW_ELEMENT, {
