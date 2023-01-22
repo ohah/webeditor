@@ -15,7 +15,7 @@ describe('Parse', () => {
           paragraph: [{ text: '굵게', format: ['bold'] }],
         },
         {
-          h1: [{ text: 'h1' }, { text: 'h1(2)' }],
+          h1: [{ text: 'h1' }, { text: 'h1(2)', format: ['underline'] }],
         },
         {
           h2: [{ text: 'h2' }],
@@ -41,7 +41,7 @@ describe('Parse', () => {
     expect(p).toBeInTheDocument();
     const h1 = result.querySelector('h1');
     expect(h1).toBeInTheDocument();
-    expect(h1?.textContent).toBe('h1');
+    expect(h1?.textContent).toBe('h1h1(2)');
     const h2 = result.querySelector('h2');
     expect(h2).toBeInTheDocument();
     expect(h2?.textContent).toBe('h2');
@@ -61,25 +61,50 @@ describe('Parse', () => {
     expect(span).toBeInTheDocument();
     expect(span?.textContent).toBe('paragraph');
   });
+
   test.only('toJSON', () => {
     const parse = new ParseController();
     expect(parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span> 자식</span></p>')).toStrictEqual(
-      [
+      {
+        root: [
+          { paragraph: [{ text: '일반텍스트 테스트 ' }] },
+          { paragraph: [{ text: ' 테스트 ' }] },
+          { paragraph: [{ text: '노자식 자식' }] },
+        ],
+      },
+    );
+    expect(parse.toJSON('일반텍스트<span> 테스트 </span>')).toStrictEqual({
+      root: [{ paragraph: [{ text: '일반텍스트 테스트 ' }] }],
+    });
+    expect(parse.toJSON('일반<strong>텍스</strong>트<span> 테스트 </span>')).toStrictEqual({
+      root: [
         {
-          paragraph: [{ text: '일반텍스트 테스트 ' }],
-        },
-        {
-          paragraph: [{ text: ' 테스트 ' }],
-        },
-        {
-          paragraph: [{ text: '노자식 자식' }],
+          paragraph: [{ text: '일반' }, { text: '텍스', format: ['bold'] }, { text: '트 테스트 ' }],
         },
       ],
-    );
-    // expect(parse.toJSON('일반텍스트<span> 테스트 </span>')).toStrictEqual([
-    //   {
-    //     paragraph: [{ text: '일반텍스트 테스트 ' }],
-    //   },
-    // ]);
+    });
+    expect(
+      parse.toJSON(`<br>첫번째
+    <br>두번째
+    <p>문단<span> 문단스팬 </span></p>
+    <div>div</div>
+    <div>div2</div>
+    <p>asdf</p>`),
+    ).toStrictEqual({
+      root: [
+        {
+          paragraph: [{ linebreak: true }, { text: '첫번째' }, { linebreak: true }, { text: '두번째' }],
+        },
+        {
+          paragraph: [{ text: '문단 문단스팬 ' }],
+        },
+        {
+          paragraph: [{ text: 'divdiv2' }],
+        },
+        {
+          paragraph: [{ text: 'asdf' }],
+        },
+      ],
+    });
   });
 });

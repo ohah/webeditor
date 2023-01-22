@@ -49,25 +49,20 @@ const parse = new ParseController();
 //     },
 //   ],
 // };
-// console.log('data', data);
-// const result = parse.toJSON(
-//   '일반텍스트<span> 테<strong>스트</strong></span> <p> 테스트 </p> <p>노자식<span>자식</span></p>',
+// console.log(
+//   'result',
+//   parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span> 자식</span></p>'),
+//   // parse.toJSON(
+//   //   '최상위텍스트<span> 스팬 </span><p> 노스팬P </p><p>노스팬P2<span>정상SPAN</span></p><span>마지막스팬</span>',
+//   // ),
+//   parse.toJSON(
+//     '<span>텍스트</span><strong>굵게</strong><em>기울임</em><p><strong>스트롱</strong><span>일반</span></p><strong>마지막</strong>',
+//   ),
 // );
-// const result = parse.toJSON('<span> 테<strong>스트</strong> </span>');
-// const result = parse.toJSON('일반텍스트<span> 테스트 </span> <p> 테스트 </p> <p>노자식<span>자식</span></p>');
-// const result = parse.toJSON('일반텍스트<span> 테<strong>스트</strong> </span>');
-// '<p><span> 테<strong>스트</strong> </span></p>'
-// '<p><span> 테<strong>스트</strong> </span><strong>스트</strong></p>'
-// console.log('result', parse.toJSON('일반텍스트<span> 테스트 </span> <p> 테스트 </p> <p>노자식<span>자식</span></p>'));
 console.log(
-  'result',
-  parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span> 자식</span></p>'),
-  // parse.toJSON(
-  //   '최상위텍스트<span> 스팬 </span><p> 노스팬P </p><p>노스팬P2<span>정상SPAN</span></p><span>마지막스팬</span>',
-  // ),
-  parse.toJSON(
-    '<span>텍스트</span><strong>굵게</strong><em>기울임</em><p><strong>스트롱</strong><span>일반</span></p><strong>마지막</strong>',
-  ),
+  'test',
+  parse.toJSON(`<p><span> 안녕 </span> <span> <u style="font-weight:bold">야<i>asgd</i></u> <b>싶다</b></span>
+  </p>`),
 );
 document.addEventListener('paste', event => {
   const paste = event.clipboardData?.getData('text/html');
@@ -82,3 +77,5 @@ document.addEventListener('paste', event => {
 
   event.preventDefault();
 });
+
+console.log('adsf', getComputedStyle(document.createElement('div')));

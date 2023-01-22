@@ -17,6 +17,7 @@ class EditorElement extends HTMLElement implements WebComponent {
 
   constructor() {
     super();
+    const parse = new ParseController();
     this.isFocus = false;
     this.content = document.createElement('iframe');
     this.content.style.position = 'relative';
@@ -28,10 +29,13 @@ class EditorElement extends HTMLElement implements WebComponent {
     this.shadowRoot = this.attachShadow({ mode: 'open' });
     // this.content.innerHTML = this.innerHTML;
     this.shadowRoot.appendChild(this.content);
+
     this.shadowRoot.appendChild(this.textarea);
     // console.log(this.innerHTML.replace(/\n\s+/g, ''));
+    // this.content.contentDocument!.body.innerHTML = parse.toHTML(parse.toJSON(this.innerHTML));
     this.content.contentDocument!.body.innerHTML = this.innerHTML;
     this.content.contentDocument!.body.style.margin = '0';
+    // console.log(getComputedStyle(this.content.contentDocument!.querySelector('p')));
     // const style = document.createElement('style');
     // style.innerText = 'p{margin:0;padding:0}';
     // this.content.contentDocument!.head.appendChild(style);
