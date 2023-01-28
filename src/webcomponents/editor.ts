@@ -2,7 +2,15 @@
 /* eslint-disable class-methods-use-this */
 import { ParseController } from 'controller/ParseController';
 import { SelectionController, SelectionType } from 'controller/SelectionController';
+import * as HTMLParser from 'node-html-parser';
 import { CursorElement, WebComponent } from 'webcomponents';
+var root = HTMLParser.parse('<ul id="list"><li>Hello World</li></ul>', {
+  blockTextElements: {
+    script: false,
+    noscript: false,
+  },
+});
+console.log('root', root);
 
 /* eslint-disable no-useless-constructor */
 class EditorElement extends HTMLElement implements WebComponent {
