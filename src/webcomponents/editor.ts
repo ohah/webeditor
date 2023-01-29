@@ -4,13 +4,13 @@ import { ParseController } from 'controller/ParseController';
 import { SelectionController, SelectionType } from 'controller/SelectionController';
 import * as HTMLParser from 'node-html-parser';
 import { CursorElement, WebComponent } from 'webcomponents';
-var root = HTMLParser.parse('<ul id="list"><li>Hello World</li></ul>', {
-  blockTextElements: {
-    script: false,
-    noscript: false,
-  },
-});
-console.log('root', root);
+// var root = HTMLParser.parse('<ul id="list"><li>Hello World</li></ul>', {
+//   blockTextElements: {
+//     script: false,
+//     noscript: false,
+//   },
+// });
+// console.log('root', root);
 
 /* eslint-disable no-useless-constructor */
 class EditorElement extends HTMLElement implements WebComponent {
@@ -33,11 +33,9 @@ class EditorElement extends HTMLElement implements WebComponent {
     this.content.style.margin = '0px';
     this.content.tabIndex = -1;
     this.textarea = document.createElement('textarea');
-    // this.placeholder = '시발롬아';
     this.shadowRoot = this.attachShadow({ mode: 'open' });
     // this.content.innerHTML = this.innerHTML;
     this.shadowRoot.appendChild(this.content);
-
     this.shadowRoot.appendChild(this.textarea);
     // console.log(this.innerHTML.replace(/\n\s+/g, ''));
     // this.content.contentDocument!.body.innerHTML = parse.toHTML(parse.toJSON(this.innerHTML));
@@ -73,6 +71,7 @@ class EditorElement extends HTMLElement implements WebComponent {
   private render() {}
 
   public connectedCallback(): void {
+    console.log('this', this);
     this.content.contentDocument?.addEventListener('selectionchange', this.selection.change.bind(this.selection));
     // throw new Error('Method not implemented.');
   }

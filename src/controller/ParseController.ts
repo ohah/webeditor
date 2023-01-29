@@ -97,6 +97,37 @@ export const HtmlMerge = (element: Node): Element => {
 };
 
 /**
+ * 자식 노드를 1차원 배열로
+ * 부모가 p, h2 등이 아니면 부모태그에 스타일을 넣어주고 태그 제거
+ * @param element
+ */
+export const childrenMerge = (element: Node | Element) => {
+  // element = <Element>element;
+  const parentTag = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'table', 'code', 'quote'];
+  Array.from((<Element>element).children).map(ele => {
+    const parentEl = ele.parentElement;
+    // if (parentTag.includes(parentEl?.nodeName.toLowerCase() || '') && parentEl && ele.childElementCount === 0) {
+    //   console.log('parentEl', parentEl);
+    //   const textNode = document.createTextNode(element.textContent || '');
+    //   parentEl.appendChild(textNode);
+    //   // console.log('element', element);
+    //   // parentEl.textContent = parentEl.textContent || '' + element.textContent + element.nodeName + '노드네임';
+    //   // const spanEl = document.createElement('span');
+    //   // parentEl.removeChild(element);
+    //   ele.replaceWith(textNode);
+    //   // spanEl.append(ele);
+    //   // return spanEl;
+    // }
+    if ((<Element>ele).childElementCount > 0) {
+      console.log('ele', ele);
+      childrenMerge(ele);
+    }
+    return ele;
+  });
+  // element.parentNode
+};
+
+/**
  * 무작위한 text/html 데이터를 원하는 html 태그 형태로 바꾼다.
  * @param data {string}
  * @returns HTML
@@ -135,7 +166,7 @@ export const HtmlFilter = (data: string) => {
   while (textWalker.nextNode()) {
     const spanEl = document.createElement('span');
     (textWalker.currentNode as Element).replaceWith(spanEl);
-    console.log('textWalker.currentNode', textWalker.currentNode.cloneNode(true));
+    // console.log('textWalker.currentNode', textWalker.currentNode.cloneNode(true));
     spanEl.append(textWalker.currentNode);
   }
   //형제 span을 합친다.
@@ -280,6 +311,24 @@ const FormatParser = (data: JSONAttr[]) => {
   });
 };
 
+const depthCount = (element: Element) => {
+  let count = -1;
+  while (element.parentNode) {
+    element = <Element>element.parentNode;
+    count++;
+  }
+  return count;
+};
+
+const depthCounter = (element: Element) => {
+  if (element.children) {
+    Array.from(element.children).map(ele => {
+      depthCount(ele);
+      depthCounter(ele);
+    });
+  }
+};
+
 const JSONParser = (data: JSONFormat) => {
   const keys = Object.keys(data) as unknown as TagType[];
   const result = keys.map(key => {
@@ -295,18 +344,19 @@ const JSONParser = (data: JSONFormat) => {
 
 const TextNodeToWrapSpan = (element: Node | Element) => {
   const t = Array.from((<Node>element).childNodes).map(node => {
+    console.log('node', node, node.parentNode, element);
     if (node.parentElement === element && Node.TEXT_NODE === node.nodeType && node.textContent?.trim() !== '') {
       const spanEl = document.createElement('span');
       node.replaceWith(spanEl);
       spanEl.append(node);
-      return spanEl;
+      // return spanEl;
     }
     if ((<Element>node).childElementCount) {
       TextNodeToWrapSpan(node);
     }
-    return node;
+    // return node;
   });
-  console.log('t', t);
+  // console.log('t', t);
 };
 
 export class ParseController {
@@ -343,13 +393,37 @@ export class ParseController {
     // element.innerHTML = element.innerHTML.replace(/\n/g, '').replace(/<div[^/>]*>([^<]*)<\/div>/g, '<p>$1</p>');
     element.normalize();
     TextNodeToWrapSpan(element);
+    console.log('element', element);
+    const depth: any[] = [];
+
+    // const t = getObjectChildren(element);
+    // function getObjectChildren(elem: Element) {
+    //   var elemChildren = elem.childNodes;
+    //   var result = [];
+    //   for (var k = 0; k < elemChildren.length; k++) {
+    //     result.push(elemChildren[k]);
+    //     if (elemChildren[k].childNodes.length > 0) {
+    //       var tmp: any = getObjectChildren(<Element>elemChildren[k]);
+    //       for (var i = 0; i < tmp.length; i++) {
+    //         result.push(tmp[i]);
+    //       }
+    //     }
+    //   }
+    //   return result;
+    // }
     // 부모가 p, h2 등이 아니면 부모태그에 스타일을 넣어주고 태그 제거
+    // childrenMerge(element);
+    // console.log('depth', t);
     console.log('element', element.innerHTML);
-    const depsWalker = document.createTreeWalker(element, NodeFilter.SHOW_ALL, null);
+    const depsWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null);
     while (depsWalker.nextNode()) {
-      console.log(depsWalker.currentNode.nodeName);
+      const count = depthCount(depsWalker.currentNode as Element);
+      depth.push([depsWalker.currentNode, count]);
+      // console.log(depsWalker.currentNode.nodeName);
       // depsWalker.currentNode.parentNode
     }
+    depth.sort((a, b) => b[1] - a[1]);
+    console.log('depth', depth);
     // const textWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
     //   acceptNode(node) {
     //     if (
@@ -424,6 +498,7 @@ export class ParseController {
     //     (<Element>jsonWalker.currentNode).setAttribute('style', `${style || ''}${parentStyle}`);
     //   }
     // }
+
     const result = document.createElement('div');
     const Vdom = document.createDocumentFragment();
     Vdom.appendChild(result);

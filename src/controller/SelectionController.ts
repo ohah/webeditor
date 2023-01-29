@@ -161,36 +161,59 @@ function data_of(txt: any) {
 
 export class SelectionController {
   selection: globalThis.Selection;
+  previousNode: Node | undefined;
+  currentNode: { node: Node | undefined; pos: number };
+  nextNode: Node | undefined;
   text: string;
   type: CursorSelection;
   position: Pick<DOMRect, 'height' | 'top' | 'left'>;
   line: number;
   col: number;
   editor: Document;
-  cloneRange?: globalThis.Range;
-  range?: globalThis.Range;
+  cloneRange: globalThis.Range;
+  range: globalThis.Range;
   cursor: CursorElement;
   constructor(editor: Document) {
     this.cursor = document.createElement('editor-cursor') as CursorElement;
     this.editor = editor;
     this.line = 0;
     this.col = 0;
+    this.currentNode = {} as never;
     this.selection = this.editor.getSelection()!;
     this.text = this.selection.toString();
+    // this.selection = this.editor.getSelection()!;
+    this.range = new globalThis.Range();
+    this.cloneRange =
+      this.selection.type !== 'None' ? this.selection.getRangeAt(0).cloneRange() : this.range.cloneRange();
     // this.cloneRange = this.editor.getSelection()?.getRangeAt(0).cloneRange();
     this.type = this.selection.type as CursorSelection;
     this.position = this.getPos();
     this.editor.addEventListener('keydown', e => {
       e.preventDefault();
       if (e.key === 'ArrowRight') {
-        console.log('실행');
         this.Next();
       }
     });
   }
 
   change() {
+    this.selection = this.editor.getSelection()!;
+    this.text = this.selection.toString();
+    this.range = new globalThis.Range();
+    this.cloneRange = this.selection.getRangeAt(0).cloneRange();
     this.position = this.getPos();
+    this.draw();
+    // const { state } = this;
+    // const { position } = state;
+    // this.cursor.style.top = `${position.top}px`;
+    // this.cursor.style.left = `${position.left}px`;
+    // this.cursor.style.height = `${position.height}px`;
+    // this.editor.body.appendChild(this.cursor);
+  }
+
+  draw() {
+    // console.log('this', this.selection);
+    // this.position = this.getPos();
     const { state } = this;
     const { position } = state;
     this.cursor.style.top = `${position.top}px`;
@@ -220,7 +243,7 @@ export class SelectionController {
     // }
     // return cur;
 
-    const walker = document.createTreeWalker(this.editor.documentElement, NodeFilter.SHOW_TEXT, null);
+    const walker = document.createTreeWalker(this.editor.documentElement, NodeFilter.SHOW_ELEMENT, null);
     // this.editor.documentElement.normalize();
     // console.log('walker', walker);
     // while (walker.nextNode()) {
@@ -260,51 +283,86 @@ export class SelectionController {
   }
 
   Next() {
-    // console.log('실행', this);
-    if (this.range && this.cloneRange) {
-      // console.log('??', this.range.END_TO_END + 1, this.range.endContainer);
-      const length = this.range.endContainer.textContent?.length || -1;
-      // console.log('this.range.toString()', this.range.toString(), this.cloneRange.endOffset);
-      if (length === this.cloneRange.endOffset) {
-        const node = this.findNextNode(this.range.endContainer)!;
-        console.log('거기', node);
-        // this.range.collapse(true);
-        this.selection.removeAllRanges();
-        this.range.setStartBefore(node);
-        this.selection.addRange(this.range);
-      } else {
-        // console.log('요기?', length, this.cloneRange.endOffset);
-        this.range.setStart(this.range.endContainer, this.range.endOffset + 1);
-        this.range.collapse(true);
-        this.selection.removeAllRanges();
-        this.selection.addRange(this.range);
-      }
-
-      this.change();
+    console.log('실행', this.currentNode, this.currentNode.node?.textContent?.length);
+    if (!this.currentNode.node && !this.range && !this.cloneRange) {
+      console.log('취소');
+      return;
     }
+    if (this.currentNode.node?.textContent?.length === this.currentNode.pos) {
+      // console.log('일치');
+    } else {
+      console.log('걸렸다');
+      // this.range?.setStart(this.range.endContainer, this.range.endOffset + 1);
+      // this.range?.setEnd(this.range.endContainer, this.range.endOffset + 1);
+      // this.range?.collapse(true);
+      // this.cloneRange = this.range.cloneRange();
+      // this.selection.removeAllRanges();
+      // console.log('this.currentNode.node', this.currentNode.node);
+      this.selection.setPosition(this.currentNode.node!.firstChild!, this.currentNode.pos + 1);
+      // this.getPos();
+      // this.draw();
+    }
+    // if (this.range && this.cloneRange) {
+    //   // console.log('??', this.range.END_TO_END + 1, this.range.endContainer);
+    //   const length = this.range.endContainer.textContent?.length || -1;
+    //   // console.log('this.range.toString()', this.range.toString(), this.cloneRange.endOffset);
+    //   if (length === this.cloneRange.endOffset) {
+    //     const node = this.findNextNode(this.range.endContainer)!;
+    //     // console.log('거기', node);
+    //     // this.range.collapse(true);
+    //     this.selection.removeAllRanges();
+    //     this.range.setStartBefore(node);
+    //     this.selection.addRange(this.range);
+    //   } else {
+    //     console.log('요기?', length, this.range);
+    //     this.range.setStart(this.range.endContainer, this.range.endOffset + 1);
+    //     this.range.collapse(true);
+    //     this.selection.removeAllRanges();
+    //     this.selection.addRange(this.range);
+    //   }
+
+    //   // this.change();
+    // }
   }
 
   getPos() {
     const editorRect = this.editor.body.getBoundingClientRect();
     try {
-      this.selection = this.editor.getSelection()!;
-      this.cloneRange = this.editor.getSelection()!.getRangeAt(0).cloneRange();
-      this.range = new globalThis.Range();
+      console.log('getPos', this.selection.type);
       this.type = this.selection.type as CursorSelection;
-      if (this.type === 'Range' && this.editor.getSelection()) {
+      if (this.type === 'Range' && this.selection) {
         // console.log('Range');
         this.range.setStart(this.selection.focusNode!, 0);
         this.range.setEnd(this.selection.focusNode!, this.selection.focusOffset);
+        this.currentNode = { node: this.selection.focusNode!, pos: this.selection.focusOffset };
       } else if (this.type === 'Caret') {
         this.range.setStart(this.cloneRange.startContainer, 0);
+        this.currentNode = { node: this.cloneRange.startContainer!, pos: this.cloneRange.startOffset };
         // console.log('Caret', this.cloneRange);
         this.range.setEnd(this.cloneRange.startContainer, this.cloneRange.startOffset);
       } else {
         // console.log('None');
         this.range.setStart(this.cloneRange.startContainer, 0);
         this.range.setEnd(this.cloneRange.endContainer, this.cloneRange.endOffset);
+        this.currentNode = { node: this.cloneRange.endContainer!, pos: this.cloneRange.endOffset };
       }
-
+      if (this.currentNode.node?.nodeType === Node.TEXT_NODE) {
+        if (this.currentNode.node.parentNode) {
+          this.currentNode.node = <Node>this.currentNode.node.parentElement;
+        }
+        if (this.currentNode.node?.nextSibling) {
+          this.nextNode = this.currentNode.node?.nextSibling;
+        } else if (this.currentNode.node?.parentNode?.nextSibling) {
+          this.nextNode = <Node>this.currentNode.node?.parentNode?.nextSibling;
+        }
+        if (this.currentNode.node?.previousSibling) {
+          this.previousNode = this.currentNode.node?.previousSibling;
+        } else if (this.currentNode.node?.parentNode?.previousSibling) {
+          this.previousNode = <Node>this.currentNode.node?.parentNode?.previousSibling;
+        }
+        // console.log('text', this.currentNode, this.nextNode, this.previousNode);
+      }
+      // console.log(this.currentNode);
       const { height, top, left, width } = this.range.getBoundingClientRect();
       // this.range.collapsed === true
       //   ? (this.range.startContainer as HTMLElement).getBoundingClientRect()

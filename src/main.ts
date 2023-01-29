@@ -59,13 +59,15 @@ const parse = new ParseController();
 //     '<span>텍스트</span><strong>굵게</strong><em>기울임</em><p><strong>스트롱</strong><span>일반</span></p><strong>마지막</strong>',
 //   ),
 // );
-console.log(
-  'test',
-  // parse.toJSON(`<p><span> 안녕 </span> <span> <u style="font-weight:bold">야<i>asgd</i></u> <b>싶다</b></span>
-  parse.toTest(
-    `asdf<p><span> 안녕 </span> <span> <u style="font-weight:bold">야<i>as<em>gd</em></i></u> <b>싶다</b></span></p>`,
-  ),
-);
+// console.log(
+//   'test',
+//   // parse.toJSON(`<p><span> 안녕 </span> <span> <u style="font-weight:bold">야<i>asgd</i></u> <b>싶다</b></span>
+//   // parse.toTest(
+//   //   `asdf<p><span> 안녕 </span> <span> <u style="font-weight:bold">야<i>as<em>gd</em></i></u> <b>싶다</b></span></p>`,
+//   // ),
+//   // parse.toTest(`<p><span><u>밑줄<i>기울임<strong>굵게</strong></i></u></span></p>`),
+//   // parse.toTest(`<p><span>안녕</span></p>`),
+// );
 document.addEventListener('paste', event => {
   const paste = event.clipboardData?.getData('text/html');
   console.log('paste', paste);
@@ -80,4 +82,4 @@ document.addEventListener('paste', event => {
   event.preventDefault();
 });
 
-console.log('adsf', getComputedStyle(document.createElement('div')));
+// console.log('adsf', getComputedStyle(document.createElement('div')));
