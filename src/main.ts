@@ -1,73 +1,113 @@
 import './style.css';
-import { ParseController } from 'controller/ParseController';
-import { Editor } from 'editor';
+import { IData } from 'controller/EventController';
+import { $getSelection } from 'utils';
 import { CursorElement, EditorElement } from 'webcomponents';
 customElements.define('editor-cursor', CursorElement);
-customElements.define('simple-editor', EditorElement);
 
-// const editor = document.getElementById('editor');
-// editor?.setAttribute('c', 'sex');
-// editor?.setAttribute('1', 'sex');
+const data: IData = {
+  root: [
+    {
+      type: 'paragraph',
+      children: [
+        {
+          type: 'text',
+          text: 'paragraph',
+          format: ['bold'],
+        },
+        { type: 'linebreak' },
+        {
+          type: 'text',
+          text: '개행',
+        },
+      ],
+    },
+    {
+      type: 'paragraph',
+      children: [
+        {
+          type: 'text',
+          text: '굵게',
+          format: ['bold'],
+        },
+      ],
+    },
+    {
+      type: 'heading',
+      tag: 'h1',
+      children: [
+        {
+          type: 'text',
+          text: 'h1',
+        },
+      ],
+    },
+    {
+      type: 'heading',
+      tag: 'h2',
+      children: [
+        {
+          type: 'text',
+          text: 'h2',
+        },
+      ],
+    },
+    {
+      type: 'heading',
+      tag: 'h3',
+      children: [
+        {
+          type: 'text',
+          text: 'h3',
+        },
+      ],
+    },
+    {
+      type: 'heading',
+      tag: 'h4',
+      children: [
+        {
+          type: 'text',
+          text: 'h4',
+        },
+      ],
+    },
+    {
+      type: 'heading',
+      tag: 'h5',
+      children: [
+        {
+          type: 'text',
+          text: 'h5',
+        },
+      ],
+    },
+    {
+      type: 'heading',
+      tag: 'h6',
+      children: [
+        {
+          type: 'text',
+          text: 'h6',
+        },
+      ],
+    },
+  ],
+};
 
-// const editor = new Editor({
-//   element: '#app',
-// });
+const editor = new EditorElement();
+editor.data = data;
+document.body.appendChild(editor);
+console.log('instance', editor.component.event);
 
-const parse = new ParseController();
-// const app = document.getElementById('app');
-// app!.innerHTML =
-//   '<h1>안녕</h1><strong>strong</strong><br>text<br><p>p-text<span>span</span></p><div>div</div><div>div2</div>';
-// const json = parse.toJSON(app!.innerHTML);
-// console.log('json', json);
-// // convertHtml(app!);
+const bold = document.getElementById('bold');
+bold?.addEventListener('click', e => {
+  e.preventDefault();
+  editor.component.dispatchCommand('bold');
+});
+const selection = $getSelection(editor.component.shadowRoot);
+console.log('selection', selection);
+// console.log(editor.editor);
 
-// const data: IData = {
-//   root: [
-//     {
-//       paragraph: [{ text: 'paragraph', format: ['bold'] }, { linebreak: true }, { text: '무야호' }],
-//     },
-//     {
-//       paragraph: [{ text: 'paragraph', format: ['bold'] }, { linebreak: true }, { text: '무야호' }],
-//     },
-//     {
-//       h1: [{ text: 'h1' }, { text: 'h1(2)' }],
-//     },
-//     {
-//       h2: [{ text: 'h2' }],
-//     },
-//     {
-//       h3: [{ text: 'h3' }],
-//     },
-//     {
-//       h4: [{ text: 'h4' }],
-//     },
-//     {
-//       h5: [{ text: 'h5' }],
-//     },
-//     {
-//       h6: [{ text: 'h6' }],
-//     },
-//   ],
-// };
-// console.log(
-//   'result',
-//   parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span> 자식</span></p>'),
-//   // parse.toJSON(
-//   //   '최상위텍스트<span> 스팬 </span><p> 노스팬P </p><p>노스팬P2<span>정상SPAN</span></p><span>마지막스팬</span>',
-//   // ),
-//   parse.toJSON(
-//     '<span>텍스트</span><strong>굵게</strong><em>기울임</em><p><strong>스트롱</strong><span>일반</span></p><strong>마지막</strong>',
-//   ),
-// );
-// console.log(
-//   'test',
-//   // parse.toJSON(`<p><span> 안녕 </span> <span> <u style="font-weight:bold">야<i>asgd</i></u> <b>싶다</b></span>
-//   // parse.toTest(
-//   //   `asdf<p><span> 안녕 </span> <span> <u style="font-weight:bold">야<i>as<em>gd</em></i></u> <b>싶다</b></span></p>`,
-//   // ),
-//   // parse.toTest(`<p><span><u>밑줄<i>기울임<strong>굵게</strong></i></u></span></p>`),
-//   // parse.toTest(`<p><span>안녕</span></p>`),
-// );
 document.addEventListener('paste', event => {
   const paste = event.clipboardData?.getData('text/html');
   console.log('paste', paste);

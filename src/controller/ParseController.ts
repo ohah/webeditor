@@ -1,3 +1,5 @@
+/* eslint-disable no-loop-func */
+/* eslint-disable no-restricted-syntax */
 /* eslint-disable no-fallthrough */
 /* eslint-disable no-case-declarations */
 /* eslint-disable prefer-const */
@@ -10,6 +12,8 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
+import { $getSelection } from 'action';
+
 // type Data = HTMLElement | Record<string, string>;
 type Data = HTMLElement;
 
@@ -17,16 +21,23 @@ export interface JSONAttr {
   text?: string;
   linebreak?: boolean;
   format?: formatType[];
+  focusOffset?: number;
+  key?: number;
 }
 
 export type JSONFormat = {
   [key in Tag]?: JSONAttr[];
 };
+
+export type DomJsonFormat = JSONFormat & {
+  element?: HTMLElement;
+};
+
 // type NodeName = string;
 export interface IData {
-  root: JSONFormat[];
+  root: EditorNode[];
 }
-enum Tag {
+export enum Tag {
   PARAGRAPH = 'paragraph',
   p = 'p',
   H1 = 'h1',
@@ -36,7 +47,8 @@ enum Tag {
   H5 = 'h5',
   H6 = 'h6',
 }
-enum FormatTag {
+
+export enum FormatTag {
   LINEBREAK = 'br',
   SPAN = 'span',
   BOLD = 'strong',
@@ -44,15 +56,16 @@ enum FormatTag {
   ITALIC = 'em',
   STRIKETHROUGH = 'strike',
 }
-type TagType = `${Tag}`;
-type useTagType = `${Tag | FormatTag}`;
-type formatType = keyof typeof InnerFormatType;
+
+export type TagType = `${Tag}`;
+export type useTagType = `${Tag | FormatTag}`;
+export type formatType = keyof typeof InnerFormatType;
 // const OuterFormatType = {
 //   code: 'code',
 //   subscript: 'sub',
 //   superscript: 'sup',
 // } as const;
-const InnerFormatType = {
+export const InnerFormatType = {
   bold: 'strong',
   italic: 'em',
   // 웹접근성 고려 안함
@@ -73,12 +86,7 @@ export const HtmlMerge = (element: Node): Element => {
   let child = element.firstChild;
   while (child) {
     const that = child.previousSibling;
-    if (
-      that &&
-      that.nodeType === Node.ELEMENT_NODE &&
-      that.nodeName === child.nodeName &&
-      ['span', 'strong', 'i', 'em'].includes(child.nodeName.toLowerCase())
-    ) {
+    if (that && that.nodeType === Node.ELEMENT_NODE && that.nodeName === child.nodeName && ['span', 'strong', 'i', 'em'].includes(child.nodeName.toLowerCase())) {
       const node = document.createElement(child.nodeName);
       while (that.firstChild) {
         node.appendChild(that.firstChild);
@@ -147,10 +155,7 @@ export const HtmlFilter = (data: string) => {
   element.normalize();
   const textWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      if (
-        ['span', 'strong', 'em', 'i', 'b'].includes(node.parentNode?.nodeName.toLowerCase() || '') === false &&
-        node.nodeName === '#text'
-      ) {
+      if (['span', 'strong', 'em', 'i', 'b'].includes(node.parentNode?.nodeName.toLowerCase() || '') === false && node.nodeName === '#text') {
         return NodeFilter.FILTER_ACCEPT;
       }
       if (node.nodeName === '#text') {
@@ -181,11 +186,7 @@ export const HtmlFilter = (data: string) => {
     // child.textContent = child.textContent?.trimEnd() || '';
     child = HtmlMerge(child);
     child.normalize();
-    if (
-      ['p', 'ul', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'code', 'quote', 'code'].includes(
-        child.nodeName.toLowerCase() || '',
-      ) === false
-    ) {
+    if (['p', 'ul', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'code', 'quote', 'code'].includes(child.nodeName.toLowerCase() || '') === false) {
       if (!res[cnt]) {
         res[cnt] = document.createElement('p');
         res[cnt].innerHTML = (<Element>child).outerHTML;
@@ -360,160 +361,75 @@ const TextNodeToWrapSpan = (element: Node | Element) => {
 };
 
 export class ParseController {
-  #data?: Data;
-  constructor(data?: Data) {
+  #data: IData;
+  #htmlData?: DomJsonFormat[];
+  constructor(data: IData) {
+    let keyNumber = 0;
+    let element: HTMLElement;
+    // if (data && data.root) {
+    //   const res: DomJsonFormat[] = data.root.map(item => {
+    //     for (const prop in item) {
+    //       if (Object.prototype.hasOwnProperty.call(item, prop)) {
+    //         if (prop === 'paragraph') {
+    //           element = document.createElement('p');
+    //         } else {
+    //           element = document.createElement(prop);
+    //         }
+    //         (<JSONAttr[]>item[prop as TagType]).map((ele: JSONAttr) => {
+    //           if (ele.text) {
+    //             const span = document.createElement('span');
+    //             span.appendChild(document.createTextNode(ele.text));
+    //             element.appendChild(span);
+    //           }
+    //           if (ele.linebreak) {
+    //             element.appendChild(document.createElement('br'));
+    //           }
+    //           ele.key = keyNumber++;
+    //           return ele;
+    //         });
+    //         // item.element = element;
+    //       }
+    //     }
+    //     return {
+    //       ...item,
+    //       element: element,
+    //     };
+    //     // return data;
+    //   });
+    //   this.#htmlData = res;
+    //   console.log('res', res);
+    // }
+
     this.#data = data;
+  }
+
+  focusNode(selection: globalThis.Selection) {
+    $getSelection;
+  }
+
+  toHtml() {
+    const fragment = document.createDocumentFragment();
+    this.#htmlData?.flatMap(item => {
+      if (item.element) {
+        fragment.appendChild(item.element);
+      }
+    });
+    return fragment;
   }
 
   dummy() {
     return this.#data;
   }
 
-  toHTML(data: IData): string {
-    const { root } = data;
-    const result = root
-      .map(data => {
-        return JSONParser(data);
-      })
-      .join('');
-    return result;
-  }
-
-  toTest(data: string) {
-    const fragment = document.createDocumentFragment();
-    const parser = new DOMParser();
-    data = data.replace(/\n\s*/g, '');
-    const dom = parser.parseFromString(data, 'text/html');
-    if (!dom.body) {
-      throw Error('html parsing error');
-    }
-
-    let element = <Element>dom.body;
-    fragment.appendChild(element);
-    // element.innerHTML = element.innerHTML.replace(/\n/g, '').replace(/<div[^/>]*>([^<]*)<\/div>/g, '<p>$1</p>');
-    element.normalize();
-    TextNodeToWrapSpan(element);
-    console.log('element', element);
-    const depth: any[] = [];
-
-    // const t = getObjectChildren(element);
-    // function getObjectChildren(elem: Element) {
-    //   var elemChildren = elem.childNodes;
-    //   var result = [];
-    //   for (var k = 0; k < elemChildren.length; k++) {
-    //     result.push(elemChildren[k]);
-    //     if (elemChildren[k].childNodes.length > 0) {
-    //       var tmp: any = getObjectChildren(<Element>elemChildren[k]);
-    //       for (var i = 0; i < tmp.length; i++) {
-    //         result.push(tmp[i]);
-    //       }
-    //     }
-    //   }
-    //   return result;
-    // }
-    // 부모가 p, h2 등이 아니면 부모태그에 스타일을 넣어주고 태그 제거
-    // childrenMerge(element);
-    // console.log('depth', t);
-    console.log('element', element.innerHTML);
-    const depsWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null);
-    while (depsWalker.nextNode()) {
-      const count = depthCount(depsWalker.currentNode as Element);
-      depth.push([depsWalker.currentNode, count]);
-      // console.log(depsWalker.currentNode.nodeName);
-      // depsWalker.currentNode.parentNode
-    }
-    depth.sort((a, b) => b[1] - a[1]);
-    console.log('depth', depth);
-    // const textWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-    //   acceptNode(node) {
-    //     if (
-    //       ['span', 'strong', 'em', 'i', 'b'].includes(node.parentNode?.nodeName.toLowerCase() || '') === false &&
-    //       node.nodeName === '#text'
-    //     ) {
-    //       return NodeFilter.FILTER_ACCEPT;
-    //     }
-    //     if ((node.nodeName === '#text' && node.nextSibling) || (node.nodeName === '#text' && node.previousSibling)) {
-    //       return NodeFilter.FILTER_ACCEPT;
-    //     }
-    //     return NodeFilter.FILTER_SKIP;
-    //   },
-    // });
-    // // 단순한 텍스트 노드의 경우 span으로 감싸준다.
-    // while (textWalker.nextNode()) {
-    //   const spanEl = document.createElement('span');
-    //   (textWalker.currentNode as Element).replaceWith(spanEl);
-    //   spanEl.append(textWalker.currentNode);
-    // }
-    // //형제 span을 합친다.
-    // element = HtmlMerge(element);
-    // element.normalize();
-    const res: Element[] = [];
-    let cnt = 0;
-    // Array.from(element.children).forEach(child => {
-    //   // 최적화해야할 부분
-    //   // child.textContent = child.textContent?.trimEnd() || '';
-    //   child = HtmlMerge(child);
-    //   child.normalize();
-    //   if (
-    //     ['p', 'ul', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'code', 'quote', 'code'].includes(
-    //       child.nodeName.toLowerCase() || '',
-    //     ) === false
-    //   ) {
-    //     if (!res[cnt]) {
-    //       res[cnt] = document.createElement('p');
-    //       res[cnt].innerHTML = (<Element>child).outerHTML;
-    //     } else {
-    //       res[cnt].innerHTML += (<Element>child).outerHTML;
-    //     }
-    //   } else {
-    //     res.push(<Element>child);
-    //     cnt = res.length - 1;
-    //   }
-    // });
-    Array.from(element.children).forEach(child => {
-      child = HtmlMerge(child);
-      child.normalize();
-      if (
-        ['p', 'ul', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'code', 'quote', 'code'].includes(
-          child.nodeName.toLowerCase() || '',
-        ) === false
-      ) {
-        if (!res[cnt]) {
-          res[cnt] = document.createElement('p');
-          res[cnt].innerHTML = (<Element>child).outerHTML;
-        } else {
-          res[cnt].innerHTML += (<Element>child).outerHTML;
-        }
-      } else {
-        res.push(<Element>child);
-        cnt = res.length - 1;
-      }
-    });
-
-    // const jsonWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null);
-    // while (jsonWalker.nextNode()) {
-    //   const parentStyle = (<Element>jsonWalker.currentNode.parentElement).getAttribute('style');
-    //   if (parentStyle) {
-    //     const style = (<Element>jsonWalker.currentNode).getAttribute('style');
-    //     (<Element>jsonWalker.currentNode).setAttribute('style', `${style || ''}${parentStyle}`);
-    //   }
-    // }
-
-    const result = document.createElement('div');
-    const Vdom = document.createDocumentFragment();
-    Vdom.appendChild(result);
-    // console.log('element', element.innerHTML);
-    // res.map(res => {
-    //   // const JSON = JSONParser();
-    //   console.log('getFormat(res.children))', getFormat(res.children));
-    //   FormatParser(getFormat(res.children)).map(row => {
-    //     console.log('row', row);
-    //     if (row) result.appendChild(row);
-    //   });
-    //   // result.appendChild(res.cloneNode(true));
-    // });
-    // console.log('result', result.innerHTML);
-    return result;
+  toHTML(): string {
+    // const { root } = this.#data;
+    // const result = root
+    //   .map(data => {
+    //     return JSONParser(data);
+    //   })
+    //   .join('');
+    return '';
+    // return result;
   }
 
   toJSON(data: string): IData {

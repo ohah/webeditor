@@ -64,15 +64,9 @@ describe('Parse', () => {
 
   test.only('toJSON', () => {
     const parse = new ParseController();
-    expect(parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span> 자식</span></p>')).toStrictEqual(
-      {
-        root: [
-          { paragraph: [{ text: '일반텍스트 테스트 ' }] },
-          { paragraph: [{ text: ' 테스트 ' }] },
-          { paragraph: [{ text: '노자식 자식' }] },
-        ],
-      },
-    );
+    expect(parse.toJSON('일반텍스트<span> 테스트 </span><p> 테스트 </p><p>노자식<span> 자식</span></p>')).toStrictEqual({
+      root: [{ paragraph: [{ text: '일반텍스트 테스트 ' }] }, { paragraph: [{ text: ' 테스트 ' }] }, { paragraph: [{ text: '노자식 자식' }] }],
+    });
     expect(parse.toJSON('일반텍스트<span> 테스트 </span>')).toStrictEqual({
       root: [{ paragraph: [{ text: '일반텍스트 테스트 ' }] }],
     });

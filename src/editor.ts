@@ -25,7 +25,7 @@ export class Editor {
     this.editor.innerHTML += '<span class="none">6.1561891981</span>';
     // this.editor.innerHTML += '<img src="야수.jpg">';
     // this.editor.appendChild(div);
-    new CursorController(this.editor);
+    // new CursorController(this.editor);
     // this.cursor = new Input.Cursor(this.editor);
     // this.editor.innerHTML += '<span>a</span>';
     // this.editor.innerHTML += '<span>A</span>';
